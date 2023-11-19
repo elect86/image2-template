@@ -18,8 +18,6 @@ repositories {
 //}
 
 
-
-
 scijava {
     group = "group"
     artifact = "artifact"
@@ -57,5 +55,8 @@ scijava {
         timezone = TimeZone.getTimeZone(ZoneOffset.UTC)
         properties = mapOf("key" to "value")
     }
-
+    mailingList {
+        name = "mailing list name"
+        archive = URL("https://example.com/mailing-list")
+    }
 }

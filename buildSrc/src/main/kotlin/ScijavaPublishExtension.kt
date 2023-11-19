@@ -56,7 +56,7 @@ interface ScijavaPublishExtension {
         val url: Property<URL>
         val distribution: Property<String>
         val comments: Property<String>
-        val owners: SetProperty<String>
+        val copyrightOwners: SetProperty<String>
     }
 
     val developers: ListProperty<Developer>
@@ -110,7 +110,10 @@ interface ScijavaPublishExtension {
 
     val mailingList: Property<MailingList>
 
-    fun mailingList(action: Action<MailingList>) = action.execute(mailingList.get())
+    fun mailingList(action: Action<MailingList>) {
+        mailingList = objects.newInstance<MailingList>()
+        action.execute(mailingList.get())
+    }
 
     interface MailingList {
         val name: Property<String>

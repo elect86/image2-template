@@ -8,14 +8,11 @@ plugins {
 
 val scijava = project.extensions.create<ScijavaPublishExtension>("scijava")
 
-typealias OrganizationProp = KProperty0<Property<ScijavaPublishExtension.Organization>>
-typealias LicenceProp = KProperty0<Property<ScijavaPublishExtension.License>>
-
 afterEvaluate {
     publishing {
         publications.create<MavenPublication>("scijava") {
 
-            fun <T> KProperty0<Property<T>>.getOrThrow(): T {
+            fun <T> KProperty0<Provider<T>>.getOrThrow(): T {
                 val prop = get()
                 val prefix = (this as CallableReference).owner.toString().substringAfter('$', "")
                 val fullName = if (prefix.isEmpty()) name else "${prefix.lowercase()}.$name"
@@ -48,6 +45,7 @@ afterEvaluate {
                         val lic = prop.getOrThrow()
                         name = lic::name.getOrThrow()
                         url = lic::url.getOrThrow().toString()
+                        properties = properties.get() + ("copyrightOwners" to lic::copyrightOwners.getOrThrow().joinToString())
                     }
                 }
                 developers {
@@ -57,7 +55,7 @@ afterEvaluate {
                         developer {
                             id = dev::nick.getOrThrow()
                             name = dev::name.getOrThrow()
-                            email = dev::email.getOrThrow()
+                            dev.email.ifPresent { email = it }
                             dev.url.ifPresent { url = it.toString() }
                             dev.organization.ifPresent { organization = it }
                             dev.organizationUrl.ifPresent { organizationUrl = it.toString() }
@@ -72,7 +70,7 @@ afterEvaluate {
                     for (con in cons)
                         contributor {
                             name = con::name.getOrThrow()
-                            email = con::email.getOrThrow()
+                            con.email.ifPresent { email = it }
                             con.url.ifPresent { url = it.toString() }
                             con.organization.ifPresent { organization = it }
                             con.organizationUrl.ifPresent { organizationUrl = it.toString() }
@@ -83,32 +81,36 @@ afterEvaluate {
                 }
                 mailingLists {
                     mailingList {
-                        val ml = scijava.mailingList.get()
-                        name = ml.name
-                        subscribe = ml.subscribe
-                        unsubscribe = ml.unsubscribe
-                        post = ml.post
-                        archive = ml.archive.get().toString()
-                        otherArchives = ml.otherArchives.get().map { it.toString() }
+                        val m: MailingProp = scijava::mailingList
+                        val ml = m.getOrThrow()
+                        name = ml::name.getOrThrow()
+                        ml.subscribe.ifPresent { subscribe = it }
+                        ml.unsubscribe.ifPresent { unsubscribe = it }
+                        ml.post.ifPresent { post = it }
+                        archive = ml::archive.getOrThrow().toString()
+                        ml.otherArchives.ifPresent { p -> p.map { it.toString() } }
                     }
                 }
-//                scm {
-//                    val scm = scijava.smc.get()
-//                    connection = scm.connection.get().toString()
-//                    developerConnection = scm.developerConnection.get().toString()
-//                    url = scm.url.get().toString()
-//                    tag = scm.tag.get()
-//                }
-//                issueManagement {
-//                    val im = scijava.issueManagement.get()
-//                    system = im.system.get()
-//                    url = im.url.get().toString()
-//                }
-//                ciManagement {
-//                    val cm = scijava.ciManagement.get()
-//                    system = cm.system.get()
-//                    url = cm.url.get().toString()
-//                }
+                scm {
+                    val s: ScmProp = scijava::smc
+                    val scm = s.getOrThrow()
+                    connection = scm::connection.getOrThrow().toString()
+                    scm.developerConnection.ifPresent { developerConnection = it.toString() }
+                    url = scm::url.getOrThrow().toString()
+                    scm.tag.ifPresent { tag = it }
+                }
+                issueManagement {
+                    val i: ManProp = scijava::issueManagement
+                    val im = i.getOrThrow()
+                    system = im::system.getOrThrow()
+                    url = im::url.getOrThrow().toString()
+                }
+                ciManagement {
+                    val c: ManProp = scijava::ciManagement
+                    val cm = c.getOrThrow()
+                    system = cm::system.getOrThrow()
+                    url = cm::url.getOrThrow().toString()
+                }
             }
         }
         repositories {
@@ -116,4 +118,10 @@ afterEvaluate {
         }
     }
 }
+
+typealias OrganizationProp = KProperty0<Property<ScijavaPublishExtension.Organization>>
+typealias LicenceProp = KProperty0<Property<ScijavaPublishExtension.License>>
+typealias MailingProp = KProperty0<Property<ScijavaPublishExtension.MailingList>>
+typealias ScmProp = KProperty0<Property<ScijavaPublishExtension.Scm>>
+typealias ManProp = KProperty0<Property<ScijavaPublishExtension.Management>>
 
